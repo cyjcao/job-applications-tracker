@@ -2,6 +2,10 @@ main {
     font-family: 'Oswald', sans-serif;
 }
 
+.hidden {
+    visibility: hidden;
+}
+
 .app-title {
     font-size: 80px;
     opacity: 0.4;
@@ -10,8 +14,7 @@ main {
 .container {
     margin: auto;
     padding: 25px;
-    max-width: 75%;
-    border: 1px black solid;
+    max-width: 85%;
     text-align: center;
 }
 
@@ -42,10 +45,6 @@ main {
     cursor: pointer;
 }
 
-.application-list {
-    list-style-type: none;
-}
-
 .application-item {
     font-size: 18px;
     font-weight: bold;
@@ -53,7 +52,16 @@ main {
     border: 0.5px black solid;
 }
 
+.status-div {
+    font-size: 12px;
+}
+
+.container h3 {
+    text-align: left;
+}
+
 ul {
+    list-style-type: none;
     grid-template-columns: repeat(4, 1fr);
     grid-column-gap: 10px;
     grid-row-gap: 15px;
