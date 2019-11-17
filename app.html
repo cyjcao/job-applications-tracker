@@ -18,7 +18,7 @@
                 <h3 id="interviews-header" class="hidden">My Interviews:</h3>
                 <ul class="interviews-list js-interviews-list grid-container"></ul>
                 <form class="js-form">
-                    <div class="form-container grid-container">
+                    <div id='form-container' class="form-container grid-container">
                         <label for="company-name" >Name of Company: </label>
                         <input type="text" id="company-name" placeholder="e.g. Google" autofocus required>
                         <label for="position-name">Position title: </label>
@@ -27,14 +27,18 @@
                         <input type="url" id="posting-url" placeholder="https://example.com">
                         <div class="status-div">
                             <span style="display: block;">Application status:</span>
-                            <input type="radio" id="wishlist" name="job-status" value="wishlist" checked>
-                            <label for="wishlist">Wishlist</label>
-                            <input type="radio" id="applied" name="job-status" value="applied">
-                            <label for="applied">Applied</label>
-                            <input type="radio" id="phone" name="job-status" value="phone">
-                            <label for="phone">Phone</label>
-                            <input type="radio" id="site" name="job-status" value="site">
-                            <label for="site">Site</label>
+                            <label for="wishlist">
+                                <input type="radio" id="wishlist" name="job-status" value="wishlist" checked>
+                            Wishlist</label>
+                            <label for="applied">
+                                <input type="radio" id="applied" name="job-status" value="applied">
+                            Applied</label>
+                            <label for="phone">
+                                <input type="radio" id="phone" name="job-status" value="phone">
+                            Phone</label>
+                            <label for="site">
+                                <input type="radio" id="site" name="job-status" value="site">
+                            Site</label>
                         </div>
                         <button type="submit"><i class="far fa-plus-square fa-5x"></i></button>
                     </div>

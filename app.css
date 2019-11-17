@@ -56,6 +56,12 @@ main {
     font-size: 12px;
 }
 
+.form-datetime-div input {
+    margin: 5px;
+    width: 50%;
+    justify-self: center;
+}
+
 .container h3 {
     text-align: left;
 }

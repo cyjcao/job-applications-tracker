@@ -13,8 +13,13 @@ let itemsCreated = 0;
 // status -> application status
 
 function create_application_item(company, position, link=None, status) {
-    let id = company + '-' + position + itemsCreated;
-    return {company, position, link, status, id};
+    let id = Date.now()
+    let datetimeInfo = {
+        applicationDeadline: undefined,
+        appliedTime: undefined,
+        interviewTime: undefined
+    };
+    return {id, company, position, link, status, datetimeInfo};
 }
 
 // show/hide the headers for each status list
@@ -113,7 +118,7 @@ function statusChangeHandler(event) {
     toggleHiddenListHeaders();
 }
 
-function createStatusButtons(checked_value) {
+function createStatusButtons(application) {
     const div = document.createElement('div');
     div.setAttribute('class', 'status-div');
     const p = document.createElement('p');
@@ -126,7 +131,7 @@ function createStatusButtons(checked_value) {
         radioBtn.setAttribute('name', 'status' + itemsCreated);
         radioBtn.setAttribute('value', STATUS_VALUES[i]);
         radioBtn.setAttribute('cursor', 'pointer');
-        if(radioBtn.getAttribute('value') === checked_value){
+        if(radioBtn.getAttribute('value') === application.status){
             radioBtn.setAttribute('checked', true);
         }
 
@@ -136,21 +141,49 @@ function createStatusButtons(checked_value) {
         div.appendChild(label);
 
         radioBtn.addEventListener('change', statusChangeHandler);
+        radioBtn.addEventListener('change', function(radioBtn){
+            const listItem = document.getElementById(application.id);
+            changeDateTimeOptions(radioBtn);
+        });
     }
 
     return div;
 }
 
-function addApplicationItem(company, position, link, status) {
+function addApplicationItem(company, position, link, status, dateInfo, timeInfo) {
     const application = create_application_item(company, position, link, status);
+
+    // extract user entered date and time info to create new Date object
+    let dateParts;
+    let timeParts;
+    if(dateInfo){
+        dateParts = dateInfo.split('-');
+    }
+    if(timeInfo){
+        timeParts = timeInfo.split(':');
+    }
     let list;
+    const timeInfoDiv = document.createElement('div');
+    timeInfoDiv.setAttribute('class', 'timeinfo-div');
+    const timeInfoPara = document.createElement('p');
+    timeInfoDiv.appendChild(timeInfoPara);
     if(application.status === STATUS_VALUES[0]){
+        application.datetimeInfo.applicationDeadline = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
+        timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.applicationDeadline, 'days') + ' days left until deadline';
         wishlistItems.push(application);
         list = document.querySelector(".js-wishlist-list");
     } else if(application.status === STATUS_VALUES[1]) {
+        application.datetimeInfo.appliedTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
+        timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.appliedTime, 'days') + ' days since you applied';
         applicationItems.push(application);
         list = document.querySelector(".js-applications-list");
     } else{
+        application.datetimeInfo.interviewTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2], timeParts[0], timeParts[1]).toISOString();
+        let secondsDiff = findTimeDifference(application.datetimeInfo.interviewTime);
+        let daysDiff = Math.floor(secondsDiff / 86400);
+        secondsDiff -= daysDiff * 86400;
+        let hoursDiff = Math.floor(secondsDiff / 3600) % 24;
+        timeInfoPara.textContent = daysDiff + ' days and ' + hoursDiff + ' hours until your interview';
         interviewItems.push(application);
         list = document.querySelector(".js-interviews-list");
     }
@@ -180,8 +213,14 @@ function addApplicationItem(company, position, link, status) {
             break;
     }
     
-    const statusBtnDiv = createStatusButtons(application.status);
-    listItem.appendChild(statusBtnDiv);
+    const dateTimeDiv = addDateTimePickers();
+    dateTimeDiv.hidden = true;
+    listItem.appendChild(dateTimeDiv);
+
+    const statusBtnDiv = createStatusButtons(application);
+    listItem.insertBefore(statusBtnDiv, dateTimeDiv);
+
+    listItem.appendChild(timeInfoDiv);
 
     list.append(listItem);
 
@@ -189,29 +228,143 @@ function addApplicationItem(company, position, link, status) {
     itemsCreated += 1;
 }
 
-const form = document.querySelector(".js-form");
-form.addEventListener("submit", function(event){
-    event.preventDefault();
-    const companyInput = document.getElementById("company-name");
-    const positionInput = document.getElementById("position-name");
-    const linkInput = document.getElementById("posting-url");
+function findTimeDifference(date, unit='seconds'){
+    let now = new Date();
+    let dateTimeStamp = (new Date(date)).getTime();
+    let nowTimeStamp = now.getTime();
 
-    const companyText = companyInput.value.trim();
-    const positionText = positionInput.value.trim();
-    const linkText = linkInput.value.trim();
-    const statusText = document.querySelector("input[name='job-status']:checked").value;
+    console.log(date);
+    console.log(now.toISOString());
 
-    if(companyText !== '' && positionText !== ''){
-        addApplicationItem(companyText, positionText, linkText, statusText);
-
-        // reset the form
-        companyInput.value = '';
-        positionInput.value = '';
-        linkInput.value = '';
-        document.getElementById("wishlist").checked = true;
-        document.getElementById("applied").checked = false;
-        document.getElementById("phone").checked = false;
-        document.getElementById("site").checked = false;
-        companyInput.focus();
+    let microSecondsDiff = Math.abs(dateTimeStamp - nowTimeStamp);
+    let difference = microSecondsDiff / 1000;
+    if(unit.toLowerCase() === 'days'){
+        difference = Math.floor(microSecondsDiff/(1000 * 60 * 60 * 24));
+    } else if(unit.toLowerCase() === 'hours'){
+        difference = Math.floor(microSecondsDiff/(1000 * 60 * 60));
     }
-});
+
+    return difference;
+}
+
+function changeDateTimeOptions(event) {
+    const target = event.target;
+    const parentDiv = target.parentNode.parentNode.parentNode;
+    const datetimeDiv = Array.from(parentDiv.children).filter(child => child.classList.contains('datetime-div'))[0];
+    datetimeDiv.hidden = false;
+    const formDateTimeLabel = Array.from(datetimeDiv.children).filter(child => child.nodeName.toLowerCase() === 'p')[0];
+    const datePicker = datetimeDiv.children[1];
+    const timePicker = datetimeDiv.children[2];
+
+    let today = new Date();
+    let dd = today.getDate();
+    let mm = today.getMonth() + 1;
+    let yyyy = today.getFullYear();
+    if(dd < 10){
+        dd = '0' + dd;
+    }
+    if(mm < 10){
+        mm = '0' + mm;
+    }
+    today = yyyy + '-' + mm + '-' + dd;
+    
+    if(target.value === STATUS_VALUES[0]){
+        formDateTimeLabel.textContent = 'When is the deadline to apply?';
+        datePicker.removeAttribute('max');
+        datePicker.setAttribute('min', today)
+        timePicker.hidden = true;
+    } else if(target.value === STATUS_VALUES[1]){
+        formDateTimeLabel.textContent = 'When did you apply?';
+        datePicker.removeAttribute('min');
+        datePicker.setAttribute('max', today)
+        timePicker.hidden = true;
+    } else {
+        formDateTimeLabel.textContent = 'When is your interview?';
+        datePicker.removeAttribute('max');
+        datePicker.setAttribute('min', today)
+        timePicker.hidden = false;
+    }
+
+}
+
+function addDateTimePickers() {
+    const formDateTimeDiv = document.createElement('div');
+    formDateTimeDiv.setAttribute('class', 'datetime-div');
+    const formDateTimeLabel = document.createElement('p');
+    formDateTimeLabel.textContent = 'When is the deadline to apply?';
+    const datePicker = document.createElement('input');
+    datePicker.setAttribute('type', 'date');
+    let today = new Date();
+    let dd = today.getDate();
+    let mm = today.getMonth() + 1;
+    let yyyy = today.getFullYear();
+    if(dd < 10){
+        dd = '0' + dd;
+    }
+    if(mm < 10){
+        mm = '0' + mm;
+    }
+    today = yyyy + '-' + mm + '-' + dd;
+    datePicker.setAttribute('min', today);
+    const timePicker = document.createElement('input');
+    timePicker.setAttribute('type', 'time');
+    timePicker.setAttribute('min', '00:00');
+    timePicker.setAttribute('max', '23:59');
+    timePicker.hidden = true;
+
+    formDateTimeDiv.appendChild(formDateTimeLabel);
+    formDateTimeDiv.appendChild(datePicker);
+    formDateTimeDiv.appendChild(timePicker);
+
+    return formDateTimeDiv;
+}
+
+window.onload = function() {
+
+    const form = document.querySelector(".js-form");
+    const formContainerDiv = document.querySelector('.form-container');
+    const dateTimeDiv = addDateTimePickers();
+    
+    formContainerDiv.insertBefore(dateTimeDiv, document.querySelector('.form-container button'));
+
+    form.addEventListener("submit", function(event){
+        event.preventDefault();
+        const companyInput = document.getElementById("company-name");
+        const positionInput = document.getElementById("position-name");
+        const linkInput = document.getElementById("posting-url");
+
+        const companyText = companyInput.value.trim();
+        const positionText = positionInput.value.trim();
+        const linkText = linkInput.value.trim();
+        const statusValue = document.querySelector("input[name='job-status']:checked").value;
+
+        const datetimeLabel = dateTimeDiv.children[0];
+        const datePicker = dateTimeDiv.children[1];
+        const dateFromPicker = datePicker.value;
+        const timePicker = dateTimeDiv.children[2];
+        const timeFromPicker = timePicker.value;
+
+        if(companyText !== '' && positionText !== ''){
+            addApplicationItem(companyText, positionText, linkText, statusValue, dateFromPicker, timeFromPicker);
+
+            // reset the form
+            companyInput.value = '';
+            positionInput.value = '';
+            linkInput.value = '';
+            document.getElementById("wishlist").checked = true;
+            document.getElementById("applied").checked = false;
+            document.getElementById("phone").checked = false;
+            document.getElementById("site").checked = false;
+            datetimeLabel.textContent = 'When is the deadline to apply?';
+            datePicker.value = '';
+            timePicker.hidden = true;
+            
+            companyInput.focus();
+        }
+    });
+
+    const formStatusRadioBtns = document.querySelectorAll('input[name=job-status]');
+    formStatusRadioBtns.forEach(function(btn){
+        btn.addEventListener('change', changeDateTimeOptions);
+    }); 
+};
