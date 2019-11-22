@@ -1,10 +1,27 @@
-const STATUS_VALUES = ['wishlist', 'applied', 'phone', 'site']; // job application status options (for radio buttons)
+
+// job application status options (for radio buttons)
+const STATUS_VALUES = ['wishlist', 'applied', 'phone', 'site']; 
 const NUM_STATUS_OPTIONS = STATUS_VALUES.length;
-let wishlistItems = [];
-let applicationItems = [];
-let interviewItems = [];
+const STATUS_COLORS = {
+    [STATUS_VALUES[0]]: 'yellow',
+    [STATUS_VALUES[1]]: 'orange',
+    [STATUS_VALUES[2]]: '#add8e6',
+    [STATUS_VALUES[3]]: '#009fab'
+};
+
+
+const wishlistElem = document.querySelector(".js-wishlist-list");
+const applicationlistElem = document.querySelector(".js-applications-list");
+const interviewlistElem = document.querySelector(".js-interviews-list");
+
 let itemsCreated = 0;
 
+// indexeddb constants
+const DB_NAME = 'jobApplications';
+const DB_VER = 1;
+const DB_STORE_NAME = 'applicationList';
+// db object instance to store date in
+let db; 
 
 // factory function that creates an application item object
 // company -> company name
@@ -28,26 +45,26 @@ function toggleHiddenListHeaders(){
     const wishlistHeader = document.getElementById('wishlist-header');
     const applicationsHeader = document.getElementById('applications-header');
     const interviewsHeader = document.getElementById('interviews-header');
-    if(wishlistItems.length === 0 && !wishlistHeader.classList.contains('hidden')){
+    if(!wishlistElem.hasChildNodes() && !wishlistHeader.classList.contains('hidden')){
         wishlistHeader.classList.add('hidden');
-    } else if(wishlistItems.length !== 0 && wishlistHeader.classList.contains('hidden')){
+    } else if(wishlistElem.hasChildNodes() && wishlistHeader.classList.contains('hidden')){
         wishlistHeader.classList.remove('hidden');
     }
 
-    if(applicationItems.length === 0 && !applicationsHeader.classList.contains('hidden')){
+    if(!applicationlistElem.hasChildNodes() && !applicationsHeader.classList.contains('hidden')){
         applicationsHeader.classList.add('hidden');
-    } else if(applicationItems.length !== 0 && applicationsHeader.classList.contains('hidden')){
+    } else if(applicationlistElem.hasChildNodes() && applicationsHeader.classList.contains('hidden')){
         applicationsHeader.classList.remove('hidden');
     }
 
-    if(interviewItems.length === 0 && !interviewsHeader.classList.contains('hidden')){
+    if(!interviewlistElem.hasChildNodes() && !interviewsHeader.classList.contains('hidden')){
         interviewsHeader.classList.add('hidden');
-    } else if(interviewItems.length !== 0 && interviewsHeader.classList.contains('hidden')){
+    } else if(interviewlistElem.hasChildNodes() && interviewsHeader.classList.contains('hidden')){
         interviewsHeader.classList.remove('hidden');
     }
 }
 
-function statusChangeHandler(event) {
+/* function statusChangeHandler(event) {
     const target = event.target;
     const listItem = target.parentNode.parentNode.parentNode;
     const listItemId = listItem.getAttribute('id');
@@ -116,9 +133,10 @@ function statusChangeHandler(event) {
     }
 
     toggleHiddenListHeaders();
-}
+} */
 
 function createStatusButtons(application) {
+    const form = document.createElement('form');
     const div = document.createElement('div');
     div.setAttribute('class', 'status-div');
     const p = document.createElement('p');
@@ -128,9 +146,10 @@ function createStatusButtons(application) {
     for(let i = 0; i < NUM_STATUS_OPTIONS; i++){
         const radioBtn = document.createElement('input');
         radioBtn.setAttribute('type', 'radio');
-        radioBtn.setAttribute('name', 'status' + itemsCreated);
+        radioBtn.setAttribute('name', 'status' + application.id);
         radioBtn.setAttribute('value', STATUS_VALUES[i]);
         radioBtn.setAttribute('cursor', 'pointer');
+        radioBtn.setAttribute('disabled', true);
         if(radioBtn.getAttribute('value') === application.status){
             radioBtn.setAttribute('checked', true);
         }
@@ -140,101 +159,25 @@ function createStatusButtons(application) {
         label.appendChild(radioBtn);
         div.appendChild(label);
 
-        radioBtn.addEventListener('change', statusChangeHandler);
+        // radioBtn.addEventListener('change', statusChangeHandler);
         radioBtn.addEventListener('change', function(radioBtn){
             const listItem = document.getElementById(application.id);
             changeDateTimeOptions(radioBtn);
         });
     }
 
-    return div;
-}
+    const submitBtn = document.createElement('button');
+    submitBtn.setAttribute('type', 'submit');
+    submitBtn.classList.add('hidden');
 
-function addApplicationItem(company, position, link, status, dateInfo, timeInfo) {
-    const application = create_application_item(company, position, link, status);
-
-    // extract user entered date and time info to create new Date object
-    let dateParts;
-    let timeParts;
-    if(dateInfo){
-        dateParts = dateInfo.split('-');
-    }
-    if(timeInfo){
-        timeParts = timeInfo.split(':');
-    }
-    let list;
-    const timeInfoDiv = document.createElement('div');
-    timeInfoDiv.setAttribute('class', 'timeinfo-div');
-    const timeInfoPara = document.createElement('p');
-    timeInfoDiv.appendChild(timeInfoPara);
-    if(application.status === STATUS_VALUES[0]){
-        application.datetimeInfo.applicationDeadline = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
-        timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.applicationDeadline, 'days') + ' days left until deadline';
-        wishlistItems.push(application);
-        list = document.querySelector(".js-wishlist-list");
-    } else if(application.status === STATUS_VALUES[1]) {
-        application.datetimeInfo.appliedTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
-        timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.appliedTime, 'days') + ' days since you applied';
-        applicationItems.push(application);
-        list = document.querySelector(".js-applications-list");
-    } else{
-        application.datetimeInfo.interviewTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2], timeParts[0], timeParts[1]).toISOString();
-        let secondsDiff = findTimeDifference(application.datetimeInfo.interviewTime);
-        let daysDiff = Math.floor(secondsDiff / 86400);
-        secondsDiff -= daysDiff * 86400;
-        let hoursDiff = Math.floor(secondsDiff / 3600) % 24;
-        timeInfoPara.textContent = daysDiff + ' days and ' + hoursDiff + ' hours until your interview';
-        interviewItems.push(application);
-        list = document.querySelector(".js-interviews-list");
-    }
-
-    const listItem = document.createElement("li");
-    listItem.setAttribute("id", application.id);
-    listItem.setAttribute("class", "application-item");
-    const para1 = document.createElement("p");
-    para1.textContent = application.company;
-    listItem.appendChild(para1);
-    const para2 = document.createElement("p");
-    para2.textContent = application.position;
-    listItem.appendChild(para2);
-
-    switch(status){
-        case "wishlist":
-            listItem.style.backgroundColor = "yellow";
-            break;
-        case "applied":
-            listItem.style.backgroundColor = "orange";
-            break;
-        case "phone":
-            listItem.style.backgroundColor = "#add8e6";
-            break;
-        case "site":
-            listItem.style.backgroundColor = "#009fab";
-            break;
-    }
-    
-    const dateTimeDiv = addDateTimePickers();
-    dateTimeDiv.hidden = true;
-    listItem.appendChild(dateTimeDiv);
-
-    const statusBtnDiv = createStatusButtons(application);
-    listItem.insertBefore(statusBtnDiv, dateTimeDiv);
-
-    listItem.appendChild(timeInfoDiv);
-
-    list.append(listItem);
-
-    toggleHiddenListHeaders();
-    itemsCreated += 1;
+    form.appendChild(div);
+    return form;
 }
 
 function findTimeDifference(date, unit='seconds'){
     let now = new Date();
     let dateTimeStamp = (new Date(date)).getTime();
     let nowTimeStamp = now.getTime();
-
-    console.log(date);
-    console.log(now.toISOString());
 
     let microSecondsDiff = Math.abs(dateTimeStamp - nowTimeStamp);
     let difference = microSecondsDiff / 1000;
@@ -321,6 +264,44 @@ function addDateTimePickers() {
 
 window.onload = function() {
 
+    // In the following line, you should include the prefixes of implementations you want to test.
+    window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+    // DON'T use "var indexedDB = ..." if you're not in a function.
+    // Moreover, you may need references to some window.IDB* objects:
+    window.IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction;
+    window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
+    // (Mozilla has never prefixed these objects, so we don't need window.mozIDB*)
+
+    let DBOpenRequest = window.indexedDB.open(DB_NAME, DB_VER);
+
+    // success and error handlers for loading database
+    DBOpenRequest.onerror = function(event) {
+        console.log("Error loading database");
+    };
+
+    DBOpenRequest.onsuccess = function(event) {
+        db = DBOpenRequest.result;
+        // to do: display data
+        console.log("sucess load db");
+        displayData();
+    };
+
+    // event handler for when a new version of database needs to be created
+    // either one doesn't exist or a new version number has been submitted
+    DBOpenRequest.onupgradeneeded = function(event) {
+        let db = event.target.result;
+
+        db.onerror = function(event) {
+            console.log("Error loading database");
+        };
+
+        let objectStore = db.createObjectStore(DB_STORE_NAME, { keyPath: 'id' });
+
+        // defined indexes to enable searches by other object keys
+        objectStore.createIndex("companyName", "company");
+        objectStore.createIndex("status", "status");
+    };
+
     const form = document.querySelector(".js-form");
     const formContainerDiv = document.querySelector('.form-container');
     const dateTimeDiv = addDateTimePickers();
@@ -345,21 +326,59 @@ window.onload = function() {
         const timeFromPicker = timePicker.value;
 
         if(companyText !== '' && positionText !== ''){
-            addApplicationItem(companyText, positionText, linkText, statusValue, dateFromPicker, timeFromPicker);
-
-            // reset the form
-            companyInput.value = '';
-            positionInput.value = '';
-            linkInput.value = '';
-            document.getElementById("wishlist").checked = true;
-            document.getElementById("applied").checked = false;
-            document.getElementById("phone").checked = false;
-            document.getElementById("site").checked = false;
-            datetimeLabel.textContent = 'When is the deadline to apply?';
-            datePicker.value = '';
-            timePicker.hidden = true;
-            
-            companyInput.focus();
+            const application = create_application_item(companyText, positionText, linkText, statusValue);
+    
+            // extract user entered date and time info to create new Date object
+            let dateParts;
+            let timeParts;
+            if(dateFromPicker){
+                dateParts = dateFromPicker.split('-');
+            }
+            if(timeFromPicker){
+                timeParts = timeFromPicker.split(':');
+            }
+        
+            // store date and time info based on which status job application is currently at
+            if(application.status === STATUS_VALUES[0]){
+                application.datetimeInfo.applicationDeadline = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString(); 
+            } else if(application.status === STATUS_VALUES[1]){
+                application.datetimeInfo.appliedTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
+            } else {
+                application.datetimeInfo.interviewTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2], timeParts[0], timeParts[1]).toISOString();
+            }
+        
+            // open a read/write transaction to add data to database
+            let transaction = db.transaction([DB_STORE_NAME], "readwrite");
+        
+            transaction.oncomplete = function() {
+                // to do: display data
+                console.log("Add successful")
+                displayData();
+                console.log("add display end");
+            };
+        
+            transaction.onerror = function() {
+                console.log('Transaction not opened due to error: ' + transaction.error);
+            };
+        
+            let objectStore = transaction.objectStore(DB_STORE_NAME, 'readwrite');
+        
+            let objectStoreAddRequest = objectStore.add(application);
+            objectStoreAddRequest.onsuccess = function(event) {
+                // reset the form
+                companyInput.value = '';
+                positionInput.value = '';
+                linkInput.value = '';
+                document.getElementById("wishlist").checked = true;
+                document.getElementById("applied").checked = false;
+                document.getElementById("phone").checked = false;
+                document.getElementById("site").checked = false;
+                datetimeLabel.textContent = 'When is the deadline to apply?';
+                datePicker.value = '';
+                timePicker.hidden = true;
+                
+                companyInput.focus();
+            };    
         }
     });
 
@@ -367,4 +386,207 @@ window.onload = function() {
     formStatusRadioBtns.forEach(function(btn){
         btn.addEventListener('change', changeDateTimeOptions);
     }); 
+
+    function displayData() {    
+        // status lists to store the job application items
+        let wishlistItems = [];
+        let applicationItems = [];
+        let interviewItems = [];
+    
+        // store application items into different arrays based on status
+        let transaction = db.transaction([DB_STORE_NAME]);
+        let objectStore = transaction.objectStore(DB_STORE_NAME);
+        let statusIndex = objectStore.index('status');
+        let wishlistKeyRange = IDBKeyRange.only(STATUS_VALUES[0]);
+        let applicationKeyRange = IDBKeyRange.only(STATUS_VALUES[1]);
+        let interviewKeyRange = IDBKeyRange.bound(STATUS_VALUES[2], STATUS_VALUES[3]);
+        statusIndex.openCursor(wishlistKeyRange).onsuccess = function (event) {
+            // clear list contents so don't display list of duplicates
+            wishlistElem.innerHTML = '';
+
+            let cursor = event.target.result;
+            if (cursor) {
+                wishlistItems.push(cursor.value);
+                cursor.continue();
+            }
+
+            for (let i = 0; i < wishlistItems.length; i++) {
+                const listItem = document.createElement("li");
+                listItem.setAttribute("id", wishlistItems[i].id);
+                listItem.setAttribute("class", "application-item");
+                listItem.style.backgroundColor = STATUS_COLORS[STATUS_VALUES[0]];
+                const para1 = document.createElement("p");
+                para1.textContent = wishlistItems[i].company;
+                listItem.appendChild(para1);
+                const para2 = document.createElement("p");
+                para2.textContent = wishlistItems[i].position;
+                listItem.appendChild(para2);
+        
+                const timeInfoDiv = document.createElement('div');
+                timeInfoDiv.setAttribute('class', 'timeinfo-div');
+        
+                const timeInfoPara = document.createElement('p');
+                timeInfoDiv.appendChild(timeInfoPara);
+                timeInfoPara.textContent = findTimeDifference(wishlistItems[i].datetimeInfo.applicationDeadline, 'days') + ' days left until deadline';
+        
+                const statusBtnDiv = createStatusButtons(wishlistItems[i]);
+                listItem.appendChild(statusBtnDiv);
+            
+                listItem.appendChild(timeInfoDiv);
+            
+                wishlistElem.append(listItem);    
+            }
+
+        };
+        statusIndex.openCursor(applicationKeyRange).onsuccess = function (event) {
+            applicationlistElem.innerHTML = '';
+            let cursor = event.target.result;
+            if (cursor) {
+                applicationItems.push(cursor.value);
+                cursor.continue();
+            }
+
+            for (let i = 0; i < applicationItems.length; i++) {
+                const listItem = document.createElement("li");
+                listItem.setAttribute("id", applicationItems[i].id);
+                listItem.setAttribute("class", "application-item");
+                listItem.style.backgroundColor = STATUS_COLORS[STATUS_VALUES[1]];
+                const para1 = document.createElement("p");
+                para1.textContent = applicationItems[i].company;
+                listItem.appendChild(para1);
+                const para2 = document.createElement("p");
+                para2.textContent = applicationItems[i].position;
+                listItem.appendChild(para2);
+        
+                const timeInfoDiv = document.createElement('div');
+                timeInfoDiv.setAttribute('class', 'timeinfo-div');
+        
+                const timeInfoPara = document.createElement('p');
+                timeInfoDiv.appendChild(timeInfoPara);
+                timeInfoPara.textContent = findTimeDifference(applicationItems[i].datetimeInfo.appliedTime, 'days') + ' days since you applied';
+        
+                const statusBtnDiv = createStatusButtons(applicationItems[i]);
+                listItem.appendChild(statusBtnDiv);
+            
+                listItem.appendChild(timeInfoDiv);
+            
+                applicationlistElem.append(listItem);    
+            }
+        };
+        statusIndex.openCursor(interviewKeyRange).onsuccess = function (event) {
+            interviewlistElem.innerHTML = '';
+            let cursor = event.target.result;
+            if (cursor) {
+                interviewItems.push(cursor.value);
+                cursor.continue();
+            }
+
+            for (let i = 0; i < interviewItems.length; i++) {
+                const listItem = document.createElement("li");
+                listItem.setAttribute("id", interviewItems[i].id);
+                listItem.setAttribute("class", "application-item");
+                if(interviewItems[i].status === STATUS_VALUES[2]){
+                    listItem.style.backgroundColor = STATUS_COLORS[STATUS_VALUES[2]];
+                } else {
+                    listItem.style.backgroundColor = STATUS_COLORS[STATUS_VALUES[3]];
+                }
+                const para1 = document.createElement("p");
+                para1.textContent = interviewItems[i].company;
+                listItem.appendChild(para1);
+                const para2 = document.createElement("p");
+                para2.textContent = interviewItems[i].position;
+                listItem.appendChild(para2);
+        
+                const timeInfoDiv = document.createElement('div');
+                timeInfoDiv.setAttribute('class', 'timeinfo-div');
+        
+                const timeInfoPara = document.createElement('p');
+                timeInfoDiv.appendChild(timeInfoPara);
+                let secondsDiff = findTimeDifference(interviewItems[i].datetimeInfo.interviewTime);
+                let daysDiff = Math.floor(secondsDiff / 86400);
+                secondsDiff -= daysDiff * 86400;
+                let hoursDiff = Math.floor(secondsDiff / 3600) % 24;
+                timeInfoPara.textContent = daysDiff + ' days and ' + hoursDiff + ' hours until your interview';
+        
+                const statusBtnDiv = createStatusButtons(interviewItems[i]);
+                listItem.appendChild(statusBtnDiv);
+            
+                listItem.appendChild(timeInfoDiv);
+            
+                interviewlistElem.append(listItem);    
+            }
+        };
+
+        transaction.oncomplete = function(event) {
+            toggleHiddenListHeaders();
+        };
+    }
+
+    /* function addApplicationItem(company, position, link, status, dateInfo, timeInfo) {
+        
+        let list;
+        const timeInfoDiv = document.createElement('div');
+        timeInfoDiv.setAttribute('class', 'timeinfo-div');
+        const timeInfoPara = document.createElement('p');
+        timeInfoDiv.appendChild(timeInfoPara);
+        if(application.status === STATUS_VALUES[0]){
+            application.datetimeInfo.applicationDeadline = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
+            timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.applicationDeadline, 'days') + ' days left until deadline';
+            wishlistItems.push(application);
+            list = document.querySelector(".js-wishlist-list");
+        } else if(application.status === STATUS_VALUES[1]) {
+            application.datetimeInfo.appliedTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
+            timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.appliedTime, 'days') + ' days since you applied';
+            applicationItems.push(application);
+            list = document.querySelector(".js-applications-list");
+        } else{
+            application.datetimeInfo.interviewTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2], timeParts[0], timeParts[1]).toISOString();
+            let secondsDiff = findTimeDifference(application.datetimeInfo.interviewTime);
+            let daysDiff = Math.floor(secondsDiff / 86400);
+            secondsDiff -= daysDiff * 86400;
+            let hoursDiff = Math.floor(secondsDiff / 3600) % 24;
+            timeInfoPara.textContent = daysDiff + ' days and ' + hoursDiff + ' hours until your interview';
+            interviewItems.push(application);
+            list = document.querySelector(".js-interviews-list");
+        }
+    
+        const listItem = document.createElement("li");
+        listItem.setAttribute("id", application.id);
+        listItem.setAttribute("class", "application-item");
+        const para1 = document.createElement("p");
+        para1.textContent = application.company;
+        listItem.appendChild(para1);
+        const para2 = document.createElement("p");
+        para2.textContent = application.position;
+        listItem.appendChild(para2);
+    
+        switch(status){
+            case "wishlist":
+                listItem.style.backgroundColor = "yellow";
+                break;
+            case "applied":
+                listItem.style.backgroundColor = "orange";
+                break;
+            case "phone":
+                listItem.style.backgroundColor = "#add8e6";
+                break;
+            case "site":
+                listItem.style.backgroundColor = "#009fab";
+                break;
+        }
+        
+        const dateTimeDiv = addDateTimePickers();
+        dateTimeDiv.hidden = true;
+        listItem.appendChild(dateTimeDiv);
+    
+        const statusBtnDiv = createStatusButtons(application);
+        listItem.insertBefore(statusBtnDiv, dateTimeDiv);
+    
+        listItem.appendChild(timeInfoDiv);
+    
+        list.append(listItem);
+    
+        toggleHiddenListHeaders();
+        itemsCreated += 1;
+    } */
 };
