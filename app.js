@@ -424,7 +424,11 @@ window.onload = function() {
                 editButtonsDiv.classList.add('application-item-buttons');
                 const editButton = document.createElement("button");
                 editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                const delButton = document.createElement("button");
+                delButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                delButton.setAttribute('padding-left', '5px');
                 editButtonsDiv.appendChild(editButton)
+                editButtonsDiv.appendChild(delButton);
                 listItem.appendChild(editButtonsDiv);
 
                 const para1 = document.createElement("p");
@@ -470,6 +474,21 @@ window.onload = function() {
                     div.children[div.children.length - 1].classList.remove("hidden");
 
                 });
+
+                delButton.addEventListener('click', function(event) {
+                    let transaction = db.transaction([DB_STORE_NAME], "readwrite");
+
+                    transaction.oncomplete = function(event) {
+                        displayData();
+                    };
+                    
+                    let objectStore = transaction.objectStore(DB_STORE_NAME);
+                    let deleteRequest = objectStore.delete(Number(event.target.parentNode.parentNode.parentNode.id));
+                    
+                    deleteRequest.onerror = function(event) {
+                        console.log("Error deleting item");
+                    };
+                });
             
                 wishlistElem.append(listItem);    
             }
@@ -498,7 +517,11 @@ window.onload = function() {
                 editButtonsDiv.classList.add('application-item-buttons');
                 const editButton = document.createElement("button");
                 editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                const delButton = document.createElement("button");
+                delButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                delButton.setAttribute('padding-left', '5px');
                 editButtonsDiv.appendChild(editButton)
+                editButtonsDiv.appendChild(delButton);
                 listItem.appendChild(editButtonsDiv);
 
                 const para1 = document.createElement("p");
@@ -538,6 +561,21 @@ window.onload = function() {
                     console.log(div.children[div.children.length - 1]);
                     div.children[div.children.length - 1].classList.remove("hidden");
                 });
+
+                delButton.addEventListener('click', function(event) {
+                    let transaction = db.transaction([DB_STORE_NAME], "readwrite");
+
+                    transaction.oncomplete = function(event) {
+                        displayData();
+                    };
+                    console.log(event.target.parentNode.parentNode.parentNode.id);
+                    let objectStore = transaction.objectStore(DB_STORE_NAME);
+                    let deleteRequest = objectStore.delete(Number(event.target.parentNode.parentNode.parentNode.id));
+                    
+                    deleteRequest.onerror = function(event) {
+                        console.log("Error deleting item");
+                    };
+                });
             
                 applicationlistElem.append(listItem);    
             }
@@ -569,7 +607,11 @@ window.onload = function() {
                 editButtonsDiv.classList.add('application-item-buttons');
                 const editButton = document.createElement("button");
                 editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                const delButton = document.createElement("button");
+                delButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                delButton.setAttribute('padding-left', '5px');
                 editButtonsDiv.appendChild(editButton)
+                editButtonsDiv.appendChild(delButton);
                 listItem.appendChild(editButtonsDiv);
 
                 const para1 = document.createElement("p");
@@ -619,6 +661,21 @@ window.onload = function() {
                     console.log(div.children[div.children.length - 1]);
                     div.children[div.children.length - 1].classList.remove("hidden");
 
+                });
+
+                delButton.addEventListener('click', function(event) {
+                    let transaction = db.transaction([DB_STORE_NAME], "readwrite");
+
+                    transaction.oncomplete = function(event) {
+                        displayData();
+                    };
+                    console.log(event.target.parentNode.parentNode.parentNode.id);
+                    let objectStore = transaction.objectStore(DB_STORE_NAME);
+                    let deleteRequest = objectStore.delete(Number(event.target.parentNode.parentNode.parentNode.id));
+                    
+                    deleteRequest.onerror = function(event) {
+                        console.log("Error deleting item");
+                    };
                 });
             
                 interviewlistElem.append(listItem);    
