@@ -408,6 +408,10 @@ window.onload = function() {
                 cursor.continue();
             }
 
+            wishlistItems.sort(function (a, b){
+                return (new Date(a.datetimeInfo.applicationDeadline)).getTime() - (new Date(b.datetimeInfo.applicationDeadline)).getTime();
+            });
+
             for (let i = 0; i < wishlistItems.length; i++) {
                 const listItem = document.createElement("li");
                 listItem.setAttribute("id", wishlistItems[i].id);
@@ -479,6 +483,10 @@ window.onload = function() {
                 cursor.continue();
             }
 
+            applicationItems.sort(function (a, b){
+                return (new Date(a.datetimeInfo.appliedTime)).getTime() - (new Date(b.datetimeInfo.appliedTime)).getTime();
+            });
+
             for (let i = 0; i < applicationItems.length; i++) {
                 const listItem = document.createElement("li");
                 listItem.setAttribute("id", applicationItems[i].id);
@@ -541,6 +549,10 @@ window.onload = function() {
                 interviewItems.push(cursor.value);
                 cursor.continue();
             }
+
+            interviewItems.sort(function (a, b){
+                return (new Date(a.datetimeInfo.interviewTime)).getTime() - (new Date(b.datetimeInfo.interviewTime)).getTime();
+            });
 
             for (let i = 0; i < interviewItems.length; i++) {
                 const listItem = document.createElement("li");
