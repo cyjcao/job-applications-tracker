@@ -3,7 +3,7 @@ main {
 }
 
 .hidden {
-    visibility: hidden;
+    display: none;
 }
 
 .app-title {
@@ -50,6 +50,21 @@ main {
     font-weight: bold;
     padding: 10px;
     border: 0.5px black solid;
+}
+
+.application-item-buttons{
+    display: none;
+}
+
+.application-items-buttons button {
+    border: none;
+    outline: none;
+    background-color: transparent;
+    cursor: pointer;
+}
+
+.application-item:hover > .application-item-buttons{
+    display: inline-block;
 }
 
 .status-div {

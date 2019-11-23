@@ -64,204 +64,6 @@ function toggleHiddenListHeaders(){
     }
 }
 
-/* function statusChangeHandler(event) {
-    const target = event.target;
-    const listItem = target.parentNode.parentNode.parentNode;
-    const listItemId = listItem.getAttribute('id');
-    console.log(listItem);
-    if(target.value === "wishlist"){
-        listItem.style.backgroundColor = "yellow";
-    } else if(target.value === "applied"){
-        listItem.style.backgroundColor = "orange";
-    } else if(target.value === "phone"){
-        listItem.style.backgroundColor = "#add8e6";
-    } else {
-        listItem.style.backgroundColor = "#009fab";
-    }
-
-    const wishlistElem = document.querySelector(".js-wishlist-list");
-    const applicationlistElem = document.querySelector(".js-applications-list");
-    const interviewlistElem = document.querySelector(".js-interviews-list");
-    if(target.value === STATUS_VALUES[0]){
-        if(!wishlistElem.contains(listItem) && applicationlistElem.contains(listItem)){
-          let oldChild = applicationlistElem.removeChild(listItem);
-          wishlistElem.appendChild(oldChild);
-
-          let application = applicationItems.find(item => item.id === listItemId);
-          applicationItems = applicationItems.filter(item => item.id !== listItemId);
-          wishlistItems.push(application);
-        } else if(!wishlistElem.contains(listItem) && interviewlistElem.contains(listItem)){
-            let oldChild = interviewlistElem.removeChild(listItem);
-            wishlistElem.appendChild(oldChild);
-  
-            let application = interviewItems.find(item => item.id === listItemId);
-            interviewItems = interviewItems.filter(item => item.id !== listItemId);
-            wishlistItems.push(application);
-        }
-    } else if(target.value === STATUS_VALUES[1]){
-        if(!applicationlistElem.contains(listItem) && wishlistElem.contains(listItem)){
-          let oldChild = wishlistElem.removeChild(listItem);
-          applicationlistElem.appendChild(oldChild);
-
-          let application = wishlistItems.find(item => item.id === listItemId);
-          wishlistItems = wishlistItems.filter(item => item.id !== listItemId);
-          applicationItems.push(application);
-        } else if(!applicationlistElem.contains(listItem) && interviewlistElem.contains(listItem)){
-            let oldChild = interviewlistElem.removeChild(listItem);
-            applicationlistElem.appendChild(oldChild);
-  
-            let application = interviewItems.find(item => item.id === listItemId);
-            interviewItems = interviewItems.filter(item => item.id !== listItemId);
-            applicationItems.push(application);
-        }
-    } else{
-        if(!interviewlistElem.contains(listItem) && wishlistElem.contains(listItem)){
-            let oldChild = wishlistElem.removeChild(listItem);
-            interviewlistElem.appendChild(oldChild);
-  
-            let application = wishlistItems.find(item => item.id === listItemId);
-            wishlistItems = wishlistItems.filter(item => item.id !== listItemId);
-            interviewItems.push(application);
-        } else if(!interviewlistElem.contains(listItem) && applicationlistElem.contains(listItem)){
-            let oldChild = applicationlistElem.removeChild(listItem);
-            interviewlistElem.appendChild(oldChild);
-  
-            let application = applicationItems.find(item => item.id === listItemId);
-            applicationItems = applicationItems.filter(item => item.id !== listItemId);
-            interviewItems.push(application);
-        }
-    }
-
-    toggleHiddenListHeaders();
-} */
-
-function createStatusButtons(application) {
-    const form = document.createElement('form');
-    const div = document.createElement('div');
-    div.setAttribute('class', 'status-div');
-    const p = document.createElement('p');
-    p.textContent = 'Application Status:';
-    div.appendChild(p);
-    let radioArr = [];
-    for(let i = 0; i < NUM_STATUS_OPTIONS; i++){
-        const radioBtn = document.createElement('input');
-        radioBtn.setAttribute('type', 'radio');
-        radioBtn.setAttribute('name', 'status' + application.id);
-        radioBtn.setAttribute('value', STATUS_VALUES[i]);
-        radioBtn.setAttribute('cursor', 'pointer');
-        radioBtn.setAttribute('disabled', true);
-        if(radioBtn.getAttribute('value') === application.status){
-            radioBtn.setAttribute('checked', true);
-        }
-
-        const label = document.createElement('label');
-        label.textContent = STATUS_VALUES[i][0].toUpperCase() + STATUS_VALUES[i].slice(1);
-        label.appendChild(radioBtn);
-        div.appendChild(label);
-
-        // radioBtn.addEventListener('change', statusChangeHandler);
-        radioBtn.addEventListener('change', function(radioBtn){
-            const listItem = document.getElementById(application.id);
-            changeDateTimeOptions(radioBtn);
-        });
-    }
-
-    const submitBtn = document.createElement('button');
-    submitBtn.setAttribute('type', 'submit');
-    submitBtn.classList.add('hidden');
-
-    form.appendChild(div);
-    return form;
-}
-
-function findTimeDifference(date, unit='seconds'){
-    let now = new Date();
-    let dateTimeStamp = (new Date(date)).getTime();
-    let nowTimeStamp = now.getTime();
-
-    let microSecondsDiff = Math.abs(dateTimeStamp - nowTimeStamp);
-    let difference = microSecondsDiff / 1000;
-    if(unit.toLowerCase() === 'days'){
-        difference = Math.floor(microSecondsDiff/(1000 * 60 * 60 * 24));
-    } else if(unit.toLowerCase() === 'hours'){
-        difference = Math.floor(microSecondsDiff/(1000 * 60 * 60));
-    }
-
-    return difference;
-}
-
-function changeDateTimeOptions(event) {
-    const target = event.target;
-    const parentDiv = target.parentNode.parentNode.parentNode;
-    const datetimeDiv = Array.from(parentDiv.children).filter(child => child.classList.contains('datetime-div'))[0];
-    datetimeDiv.hidden = false;
-    const formDateTimeLabel = Array.from(datetimeDiv.children).filter(child => child.nodeName.toLowerCase() === 'p')[0];
-    const datePicker = datetimeDiv.children[1];
-    const timePicker = datetimeDiv.children[2];
-
-    let today = new Date();
-    let dd = today.getDate();
-    let mm = today.getMonth() + 1;
-    let yyyy = today.getFullYear();
-    if(dd < 10){
-        dd = '0' + dd;
-    }
-    if(mm < 10){
-        mm = '0' + mm;
-    }
-    today = yyyy + '-' + mm + '-' + dd;
-    
-    if(target.value === STATUS_VALUES[0]){
-        formDateTimeLabel.textContent = 'When is the deadline to apply?';
-        datePicker.removeAttribute('max');
-        datePicker.setAttribute('min', today)
-        timePicker.hidden = true;
-    } else if(target.value === STATUS_VALUES[1]){
-        formDateTimeLabel.textContent = 'When did you apply?';
-        datePicker.removeAttribute('min');
-        datePicker.setAttribute('max', today)
-        timePicker.hidden = true;
-    } else {
-        formDateTimeLabel.textContent = 'When is your interview?';
-        datePicker.removeAttribute('max');
-        datePicker.setAttribute('min', today)
-        timePicker.hidden = false;
-    }
-
-}
-
-function addDateTimePickers() {
-    const formDateTimeDiv = document.createElement('div');
-    formDateTimeDiv.setAttribute('class', 'datetime-div');
-    const formDateTimeLabel = document.createElement('p');
-    formDateTimeLabel.textContent = 'When is the deadline to apply?';
-    const datePicker = document.createElement('input');
-    datePicker.setAttribute('type', 'date');
-    let today = new Date();
-    let dd = today.getDate();
-    let mm = today.getMonth() + 1;
-    let yyyy = today.getFullYear();
-    if(dd < 10){
-        dd = '0' + dd;
-    }
-    if(mm < 10){
-        mm = '0' + mm;
-    }
-    today = yyyy + '-' + mm + '-' + dd;
-    datePicker.setAttribute('min', today);
-    const timePicker = document.createElement('input');
-    timePicker.setAttribute('type', 'time');
-    timePicker.setAttribute('min', '00:00');
-    timePicker.setAttribute('max', '23:59');
-    timePicker.hidden = true;
-
-    formDateTimeDiv.appendChild(formDateTimeLabel);
-    formDateTimeDiv.appendChild(datePicker);
-    formDateTimeDiv.appendChild(timePicker);
-
-    return formDateTimeDiv;
-}
-
 window.onload = function() {
 
     // In the following line, you should include the prefixes of implementations you want to test.
@@ -385,7 +187,203 @@ window.onload = function() {
     const formStatusRadioBtns = document.querySelectorAll('input[name=job-status]');
     formStatusRadioBtns.forEach(function(btn){
         btn.addEventListener('change', changeDateTimeOptions);
-    }); 
+    });
+
+    function findTimeDifference(date, unit='seconds'){
+        let now = new Date();
+        let dateTimeStamp = (new Date(date)).getTime();
+        let nowTimeStamp = now.getTime();
+    
+        let microSecondsDiff = Math.abs(dateTimeStamp - nowTimeStamp);
+        let difference = microSecondsDiff / 1000;
+        if(unit.toLowerCase() === 'days'){
+            difference = Math.floor(microSecondsDiff/(1000 * 60 * 60 * 24));
+        } else if(unit.toLowerCase() === 'hours'){
+            difference = Math.floor(microSecondsDiff/(1000 * 60 * 60));
+        }
+    
+        return difference;
+    }
+    
+    function changeDateTimeOptions(event) {
+        const target = event.target;
+        let parentDiv = target.parentNode.parentNode.parentNode;
+        if(parentDiv.nodeName.toLowerCase() !== "div"){
+            parentDiv = target.parentNode.parentNode;
+        }
+        const datetimeDiv = Array.from(parentDiv.children).filter(child => child.classList.contains('datetime-div'))[0];
+        console.log(datetimeDiv);
+        datetimeDiv.hidden = false;
+        const formDateTimeLabel = Array.from(datetimeDiv.children).filter(child => child.nodeName.toLowerCase() === 'p')[0];
+        const datePicker = datetimeDiv.children[1];
+        const timePicker = datetimeDiv.children[2];
+    
+        let today = new Date();
+        let dd = today.getDate();
+        let mm = today.getMonth() + 1;
+        let yyyy = today.getFullYear();
+        if(dd < 10){
+            dd = '0' + dd;
+        }
+        if(mm < 10){
+            mm = '0' + mm;
+        }
+        today = yyyy + '-' + mm + '-' + dd;
+        
+        if(target.value === STATUS_VALUES[0]){
+            formDateTimeLabel.textContent = 'When is the deadline to apply?';
+            datePicker.removeAttribute('max');
+            datePicker.setAttribute('min', today)
+            timePicker.hidden = true;
+        } else if(target.value === STATUS_VALUES[1]){
+            formDateTimeLabel.textContent = 'When did you apply?';
+            datePicker.removeAttribute('min');
+            datePicker.setAttribute('max', today)
+            timePicker.hidden = true;
+        } else {
+            formDateTimeLabel.textContent = 'When is your interview?';
+            datePicker.removeAttribute('max');
+            datePicker.setAttribute('min', today)
+            timePicker.hidden = false;
+        }
+    
+    }
+    
+    function addDateTimePickers() {
+        const formDateTimeDiv = document.createElement('div');
+        formDateTimeDiv.setAttribute('class', 'datetime-div');
+        const formDateTimeLabel = document.createElement('p');
+        formDateTimeLabel.textContent = 'When is the deadline to apply?';
+        const datePicker = document.createElement('input');
+        datePicker.setAttribute('type', 'date');
+        let today = new Date();
+        let dd = today.getDate();
+        let mm = today.getMonth() + 1;
+        let yyyy = today.getFullYear();
+        if(dd < 10){
+            dd = '0' + dd;
+        }
+        if(mm < 10){
+            mm = '0' + mm;
+        }
+        today = yyyy + '-' + mm + '-' + dd;
+        datePicker.setAttribute('min', today);
+        const timePicker = document.createElement('input');
+        timePicker.setAttribute('type', 'time');
+        timePicker.setAttribute('min', '00:00');
+        timePicker.setAttribute('max', '23:59');
+        timePicker.hidden = true;
+    
+        formDateTimeDiv.appendChild(formDateTimeLabel);
+        formDateTimeDiv.appendChild(datePicker);
+        formDateTimeDiv.appendChild(timePicker);
+    
+        return formDateTimeDiv;
+    }
+    
+    function createStatusButtons(application) {
+        const form = document.createElement('form');
+        const div = document.createElement('div');
+        div.setAttribute('class', 'status-div');
+        const p = document.createElement('p');
+        p.textContent = 'Application Status:';
+        div.appendChild(p);
+    
+        for(let i = 0; i < NUM_STATUS_OPTIONS; i++){
+            const radioBtn = document.createElement('input');
+            radioBtn.setAttribute('type', 'radio');
+            radioBtn.setAttribute('name', 'status' + application.id);
+            radioBtn.setAttribute('value', STATUS_VALUES[i]);
+            radioBtn.setAttribute('cursor', 'pointer');
+            radioBtn.setAttribute('disabled', true);
+            if(radioBtn.getAttribute('value') === application.status){
+                radioBtn.setAttribute('checked', true);
+            }
+    
+            const label = document.createElement('label');
+            label.textContent = STATUS_VALUES[i][0].toUpperCase() + STATUS_VALUES[i].slice(1);
+            label.appendChild(radioBtn);
+            div.appendChild(label);
+    
+            // radioBtn.addEventListener('change', statusChangeHandler);
+            radioBtn.addEventListener('change', function(radioBtn){
+                // const listItem = document.getElementById(application.id);
+                changeDateTimeOptions(radioBtn);
+            });
+        }
+    
+        const dateTimeDiv = addDateTimePickers();
+        dateTimeDiv.hidden = true;
+        div.appendChild(dateTimeDiv);
+    
+        const submitBtn = document.createElement('button');
+        submitBtn.setAttribute('type', 'submit');
+        submitBtn.textContent = 'Submit';
+        submitBtn.classList.add('hidden');
+        
+        div.appendChild(document.createElement("br"));
+        div.appendChild(submitBtn);
+    
+        form.appendChild(div);
+    
+        // update IndexedDB when form is submitted and update the page
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+    
+            const newStatusValue = document.querySelector("input[name=status" + application.id + "]:checked").value;
+    
+            const dateTimeDiv = Array.from(event.target.children[0].children).filter(child => child.classList.contains('datetime-div'))[0];
+            const datePicker = dateTimeDiv.children[1];
+            const dateFromPicker = datePicker.value;
+            const timePicker = dateTimeDiv.children[2];
+            const timeFromPicker = timePicker.value;
+    
+            // extract user entered date and time info to create new Date object
+            let dateParts;
+            let timeParts;
+            if (dateFromPicker) {
+                dateParts = dateFromPicker.split('-');
+            }
+            if (timeFromPicker) {
+                timeParts = timeFromPicker.split(':');
+            }
+            
+            let objectStore = db.transaction([DB_STORE_NAME], "readwrite").objectStore(DB_STORE_NAME);
+            let getItemRequest = objectStore.get(application.id);
+    
+            getItemRequest.onerror = function(event) {
+                console.log("Failed to retrieve item from DB");
+            };
+    
+            getItemRequest.onsuccess = function (event) {
+                // value that we want to update
+                let data = event.target.result;
+    
+                data.status = newStatusValue;
+                // store date and time info based on which status job application is currently at
+                if (data.status === STATUS_VALUES[0]) {
+                    data.datetimeInfo.applicationDeadline = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]).toISOString();
+                } else if (data.status === STATUS_VALUES[1]) {
+                    data.datetimeInfo.appliedTime = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]).toISOString();
+                } else {
+                    data.datetimeInfo.interviewTime = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]).toISOString();
+                }
+    
+                let requestUpdate = objectStore.put(data);
+    
+                requestUpdate.onerror = function(event) {
+                    console.log("Error putting updated object back into database");
+                };
+    
+                requestUpdate.onsuccess = function(event){
+                    displayData();
+                };
+    
+            };
+        });
+    
+        return form;
+    }
 
     function displayData() {    
         // status lists to store the job application items
@@ -413,26 +411,61 @@ window.onload = function() {
             for (let i = 0; i < wishlistItems.length; i++) {
                 const listItem = document.createElement("li");
                 listItem.setAttribute("id", wishlistItems[i].id);
-                listItem.setAttribute("class", "application-item");
+                listItem.classList.add('grid-container');
+                listItem.classList.add('application-item');
                 listItem.style.backgroundColor = STATUS_COLORS[STATUS_VALUES[0]];
+
+                const editButtonsDiv = document.createElement("div");
+                editButtonsDiv.setAttribute("justify-self", "end");
+                editButtonsDiv.classList.add('application-item-buttons');
+                const editButton = document.createElement("button");
+                editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                editButtonsDiv.appendChild(editButton)
+                listItem.appendChild(editButtonsDiv);
+
                 const para1 = document.createElement("p");
                 para1.textContent = wishlistItems[i].company;
                 listItem.appendChild(para1);
-                const para2 = document.createElement("p");
-                para2.textContent = wishlistItems[i].position;
-                listItem.appendChild(para2);
+
+                if(wishlistItems[i].link){
+                    const a = document.createElement("a");
+                    a.setAttribute("href", wishlistItems[i].link);
+                    const para2 = document.createElement("p");
+                    para2.textContent = wishlistItems[i].position;
+                    a.appendChild(para2);
+                    listItem.appendChild(a);
+                } else {
+                    const para2 = document.createElement("p");
+                    para2.textContent = wishlistItems[i].position;
+                    listItem.appendChild(para2);
+                }
         
                 const timeInfoDiv = document.createElement('div');
                 timeInfoDiv.setAttribute('class', 'timeinfo-div');
         
                 const timeInfoPara = document.createElement('p');
                 timeInfoDiv.appendChild(timeInfoPara);
-                timeInfoPara.textContent = findTimeDifference(wishlistItems[i].datetimeInfo.applicationDeadline, 'days') + ' days left until deadline';
+                if((new Date(wishlistItems[i].datetimeInfo.applicationDeadline)).getTime() < (new Date()).getTime()){
+                    timeInfoPara.textContent = 'Deadline to apply has passed!';
+                } else{
+                    timeInfoPara.textContent = findTimeDifference(wishlistItems[i].datetimeInfo.applicationDeadline, 'days') + ' days left until deadline';
+                }
         
                 const statusBtnDiv = createStatusButtons(wishlistItems[i]);
                 listItem.appendChild(statusBtnDiv);
             
                 listItem.appendChild(timeInfoDiv);
+
+                editButton.addEventListener('click', function(event) {
+                    const div = statusBtnDiv.children[0];
+
+                    for(let i = 1; i <= NUM_STATUS_OPTIONS; i++){
+                        div.children[i].children[0].disabled = false;
+                    }
+
+                    div.children[div.children.length - 1].classList.remove("hidden");
+
+                });
             
                 wishlistElem.append(listItem);    
             }
@@ -451,12 +484,30 @@ window.onload = function() {
                 listItem.setAttribute("id", applicationItems[i].id);
                 listItem.setAttribute("class", "application-item");
                 listItem.style.backgroundColor = STATUS_COLORS[STATUS_VALUES[1]];
+
+                const editButtonsDiv = document.createElement("div");
+                editButtonsDiv.setAttribute("justify-self", "end");
+                editButtonsDiv.classList.add('application-item-buttons');
+                const editButton = document.createElement("button");
+                editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                editButtonsDiv.appendChild(editButton)
+                listItem.appendChild(editButtonsDiv);
+
                 const para1 = document.createElement("p");
                 para1.textContent = applicationItems[i].company;
                 listItem.appendChild(para1);
-                const para2 = document.createElement("p");
-                para2.textContent = applicationItems[i].position;
-                listItem.appendChild(para2);
+                if(applicationItems[i].link){
+                    const a = document.createElement("a");
+                    a.setAttribute("href", applicationItems[i].link);
+                    const para2 = document.createElement("p");
+                    para2.textContent = applicationItems[i].position;
+                    a.appendChild(para2);
+                    listItem.appendChild(a);
+                } else {
+                    const para2 = document.createElement("p");
+                    para2.textContent = applicationItems[i].position;
+                    listItem.appendChild(para2);
+                }
         
                 const timeInfoDiv = document.createElement('div');
                 timeInfoDiv.setAttribute('class', 'timeinfo-div');
@@ -469,6 +520,16 @@ window.onload = function() {
                 listItem.appendChild(statusBtnDiv);
             
                 listItem.appendChild(timeInfoDiv);
+
+                editButton.addEventListener('click', function(event) {
+                    const div = statusBtnDiv.children[0];
+
+                    for(let i = 1; i <= NUM_STATUS_OPTIONS; i++){
+                        div.children[i].children[0].disabled = false;
+                    }
+                    console.log(div.children[div.children.length - 1]);
+                    div.children[div.children.length - 1].classList.remove("hidden");
+                });
             
                 applicationlistElem.append(listItem);    
             }
@@ -490,12 +551,30 @@ window.onload = function() {
                 } else {
                     listItem.style.backgroundColor = STATUS_COLORS[STATUS_VALUES[3]];
                 }
+
+                const editButtonsDiv = document.createElement("div");
+                editButtonsDiv.setAttribute("justify-self", "end");
+                editButtonsDiv.classList.add('application-item-buttons');
+                const editButton = document.createElement("button");
+                editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                editButtonsDiv.appendChild(editButton)
+                listItem.appendChild(editButtonsDiv);
+
                 const para1 = document.createElement("p");
                 para1.textContent = interviewItems[i].company;
                 listItem.appendChild(para1);
-                const para2 = document.createElement("p");
-                para2.textContent = interviewItems[i].position;
-                listItem.appendChild(para2);
+                if(interviewItems[i].link){
+                    const a = document.createElement("a");
+                    a.setAttribute("href", interviewItems[i].link);
+                    const para2 = document.createElement("p");
+                    para2.textContent = interviewItems[i].position;
+                    a.appendChild(para2);
+                    listItem.appendChild(a);
+                } else {
+                    const para2 = document.createElement("p");
+                    para2.textContent = interviewItems[i].position;
+                    listItem.appendChild(para2);
+                }
         
                 const timeInfoDiv = document.createElement('div');
                 timeInfoDiv.setAttribute('class', 'timeinfo-div');
@@ -506,12 +585,29 @@ window.onload = function() {
                 let daysDiff = Math.floor(secondsDiff / 86400);
                 secondsDiff -= daysDiff * 86400;
                 let hoursDiff = Math.floor(secondsDiff / 3600) % 24;
-                timeInfoPara.textContent = daysDiff + ' days and ' + hoursDiff + ' hours until your interview';
+                timeInfoPara.textContent = daysDiff + ' days and ' + hoursDiff;
+                if( (new Date(interviewItems[i].datetimeInfo.interviewTime).getTime() < (new Date()).getTime())){
+                    timeInfoPara.textContent += ' hours since your interview'; 
+                } else {
+                    timeInfoPara.textContent += ' hours until your interview';
+                }
         
                 const statusBtnDiv = createStatusButtons(interviewItems[i]);
                 listItem.appendChild(statusBtnDiv);
             
                 listItem.appendChild(timeInfoDiv);
+
+                editButton.addEventListener('click', function(event) {
+                    const div = statusBtnDiv.children[0];
+
+                    for(let i = 1; i <= NUM_STATUS_OPTIONS; i++){
+                        div.children[i].children[0].disabled = false;
+                    }
+
+                    console.log(div.children[div.children.length - 1]);
+                    div.children[div.children.length - 1].classList.remove("hidden");
+
+                });
             
                 interviewlistElem.append(listItem);    
             }
@@ -521,72 +617,4 @@ window.onload = function() {
             toggleHiddenListHeaders();
         };
     }
-
-    /* function addApplicationItem(company, position, link, status, dateInfo, timeInfo) {
-        
-        let list;
-        const timeInfoDiv = document.createElement('div');
-        timeInfoDiv.setAttribute('class', 'timeinfo-div');
-        const timeInfoPara = document.createElement('p');
-        timeInfoDiv.appendChild(timeInfoPara);
-        if(application.status === STATUS_VALUES[0]){
-            application.datetimeInfo.applicationDeadline = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
-            timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.applicationDeadline, 'days') + ' days left until deadline';
-            wishlistItems.push(application);
-            list = document.querySelector(".js-wishlist-list");
-        } else if(application.status === STATUS_VALUES[1]) {
-            application.datetimeInfo.appliedTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toISOString();
-            timeInfoPara.textContent = findTimeDifference(application.datetimeInfo.appliedTime, 'days') + ' days since you applied';
-            applicationItems.push(application);
-            list = document.querySelector(".js-applications-list");
-        } else{
-            application.datetimeInfo.interviewTime = new Date(dateParts[0], dateParts[1]-1, dateParts[2], timeParts[0], timeParts[1]).toISOString();
-            let secondsDiff = findTimeDifference(application.datetimeInfo.interviewTime);
-            let daysDiff = Math.floor(secondsDiff / 86400);
-            secondsDiff -= daysDiff * 86400;
-            let hoursDiff = Math.floor(secondsDiff / 3600) % 24;
-            timeInfoPara.textContent = daysDiff + ' days and ' + hoursDiff + ' hours until your interview';
-            interviewItems.push(application);
-            list = document.querySelector(".js-interviews-list");
-        }
-    
-        const listItem = document.createElement("li");
-        listItem.setAttribute("id", application.id);
-        listItem.setAttribute("class", "application-item");
-        const para1 = document.createElement("p");
-        para1.textContent = application.company;
-        listItem.appendChild(para1);
-        const para2 = document.createElement("p");
-        para2.textContent = application.position;
-        listItem.appendChild(para2);
-    
-        switch(status){
-            case "wishlist":
-                listItem.style.backgroundColor = "yellow";
-                break;
-            case "applied":
-                listItem.style.backgroundColor = "orange";
-                break;
-            case "phone":
-                listItem.style.backgroundColor = "#add8e6";
-                break;
-            case "site":
-                listItem.style.backgroundColor = "#009fab";
-                break;
-        }
-        
-        const dateTimeDiv = addDateTimePickers();
-        dateTimeDiv.hidden = true;
-        listItem.appendChild(dateTimeDiv);
-    
-        const statusBtnDiv = createStatusButtons(application);
-        listItem.insertBefore(statusBtnDiv, dateTimeDiv);
-    
-        listItem.appendChild(timeInfoDiv);
-    
-        list.append(listItem);
-    
-        toggleHiddenListHeaders();
-        itemsCreated += 1;
-    } */
 };
